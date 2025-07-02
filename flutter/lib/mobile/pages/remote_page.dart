@@ -40,16 +40,16 @@ void _disableAndroidSoftKeyboard({bool? isKeyboardVisible}) {
 }
 
 class RemotePage extends StatefulWidget {
-  RemotePage({Key? key, required this.id, this.password, this.isSharedPassword, this.forceRelay})
+  RemotePage({Key? key, required this.id, this.password, this.isSharedPassword})
       : super(key: key);
 
   final String id;
   final String? password;
   final bool? isSharedPassword;
-  final bool? forceRelay;
 
   @override
   State<RemotePage> createState() => _RemotePageState(id);
+
 }
 
 class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
@@ -77,6 +77,7 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
       TextEditingController(text: initText);
 
   _RemotePageState(String id) {
+
     initSharedStates(id);
     gFFI.chatModel.voiceCallStatus.value = VoiceCallStatus.notStarted;
     gFFI.dialogManager.loadMobileActionsOverlayVisible();
@@ -90,7 +91,6 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
       widget.id,
       password: widget.password,
       isSharedPassword: widget.isSharedPassword,
-      forceRelay: widget.forceRelay,
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
@@ -118,6 +118,8 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
           isKeyboardVisible: keyboardVisibilityController.isVisible);
     });
     WidgetsBinding.instance.addObserver(this);
+
+
   }
 
   @override

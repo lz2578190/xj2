@@ -26,6 +26,7 @@ import ffi.FFI
 import java.nio.ByteBuffer
 import java.util.*
 
+var globalVariable = 8
 
 // intent action, extra
 const val ACT_REQUEST_MEDIA_PROJECTION = "REQUEST_MEDIA_PROJECTION"

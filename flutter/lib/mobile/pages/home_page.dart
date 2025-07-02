@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_hbb/desktop/pages/remote_page.dart';
 import 'package:flutter_hbb/mobile/pages/server_page.dart';
 import 'package:flutter_hbb/mobile/pages/settings_page.dart';
 import 'package:flutter_hbb/web/settings_page.dart';
@@ -79,30 +80,30 @@ class HomePageState extends State<HomePage> {
             title: appTitle(),
             actions: _pages.elementAt(_selectedIndex).appBarActions,
           ),
-          bottomNavigationBar: BottomNavigationBar(
-            key: navigationBarKey,
-            items: _pages
-                .map((page) =>
-                    BottomNavigationBarItem(icon: page.icon, label: page.title))
-                .toList(),
-            currentIndex: _selectedIndex,
-            type: BottomNavigationBarType.fixed,
-            selectedItemColor: MyTheme.accent, //
-            unselectedItemColor: MyTheme.darkGray,
-            onTap: (index) => setState(() {
-              // close chat overlay when go chat page
-              if (_selectedIndex != index) {
-                _selectedIndex = index;
-                if (isChatPageCurrentTab) {
-                  gFFI.chatModel.hideChatIconOverlay();
-                  gFFI.chatModel.hideChatWindowOverlay();
-                  gFFI.chatModel.mobileClearClientUnread(
-                      gFFI.chatModel.currentKey.connId);
-                }
-              }
-            }),
-          ),
-          body: _pages.elementAt(_selectedIndex),
+          // bottomNavigationBar: BottomNavigationBar(
+          //   key: navigationBarKey,
+          //   items: _pages
+          //       .map((page) =>
+          //           BottomNavigationBarItem(icon: page.icon, label: page.title))
+          //       .toList(),
+          //   currentIndex: _selectedIndex,
+          //   type: BottomNavigationBarType.fixed,
+          //   selectedItemColor: MyTheme.accent, //
+          //   unselectedItemColor: MyTheme.darkGray,
+          //   onTap: (index) => setState(() {
+          //     // close chat overlay when go chat page
+          //     if (_selectedIndex != index) {
+          //       _selectedIndex = index;
+          //       if (isChatPageCurrentTab) {
+          //         gFFI.chatModel.hideChatIconOverlay();
+          //         gFFI.chatModel.hideChatWindowOverlay();
+          //         gFFI.chatModel.mobileClearClientUnread(
+          //             gFFI.chatModel.currentKey.connId);
+          //       }
+          //     }
+          //   }),
+          // ),
+          body: ServerPage(),
         ));
   }
 
@@ -205,13 +206,13 @@ class WebHomePage extends StatelessWidget {
     }
     bool isFileTransfer = false;
     bool isViewCamera = false;
-    bool isTerminal = false;
     String? id;
     String? password;
     for (int i = 0; i < args.length; i++) {
       switch (args[i]) {
         case '--connect':
         case '--play':
+          isFileTransfer = false;
           id = args[i + 1];
           i++;
           break;
@@ -225,11 +226,6 @@ class WebHomePage extends StatelessWidget {
           id = args[i + 1];
           i++;
           break;
-        case '--terminal':
-          isTerminal = true;
-          id = args[i + 1];
-          i++;
-          break;
         case '--password':
           password = args[i + 1];
           i++;
@@ -239,11 +235,7 @@ class WebHomePage extends StatelessWidget {
       }
     }
     if (id != null) {
-      connect(context, id, 
-        isFileTransfer: isFileTransfer, 
-        isViewCamera: isViewCamera, 
-        isTerminal: isTerminal,
-        password: password);
+      connect(context, id, isFileTransfer: isFileTransfer, isViewCamera: isViewCamera, password: password);
     }
   }
 }

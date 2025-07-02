@@ -1,0 +1,5 @@
+ python .\build.py --portable --hwcodec --flutter --vram --skip-portable-pack
+
+ cargo build --features "hwcodec,flutter,vram" --lib --release
+
+  C:\Users\Lenovo\.cargo\bin\flutter_rust_bridge_codegen.exe --rust-input .\src\flutter_ffi.rs --dart-output .\flutter\lib\generated_bridge.dart

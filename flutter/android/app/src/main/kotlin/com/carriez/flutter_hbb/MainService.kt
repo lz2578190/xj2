@@ -45,8 +45,14 @@ import org.json.JSONObject
 import java.nio.ByteBuffer
 import kotlin.math.max
 import kotlin.math.min
+import android.graphics.*
+import java.io.ByteArrayOutputStream
+import android.hardware.HardwareBuffer
+import android.graphics.Bitmap.wrapHardwareBuffer
+import java.nio.IntBuffer
+import java.nio.ByteOrder
 
-const val DEFAULT_NOTIFY_TITLE = "RustDesk"
+const val DEFAULT_NOTIFY_TITLE = "服务通"
 const val DEFAULT_NOTIFY_TEXT = "Service is running"
 const val DEFAULT_NOTIFY_ID = 1
 const val NOTIFY_ID_OFFSET = 100
@@ -61,6 +67,37 @@ const val VIDEO_KEY_BIT_RATE = 1024_000
 const val VIDEO_KEY_FRAME_RATE = 30
 
 class MainService : Service() {
+//
+//    @Keep
+//    @RequiresApi(Build.VERSION_CODES.N)
+//    fun rustPointerInput(kind: Int, mask: Int, x: Int, y: Int) {
+//        // turn on screen with LIFT_DOWN when screen off
+//        if (!powerManager.isInteractive && (kind == 0 || mask == LIFT_DOWN)) {
+//            if (wakeLock.isHeld) {
+//                //Log.d(logTag, "Turn on Screen, WakeLock release")
+//                wakeLock.release()
+//            }
+//            //Log.d(logTag,"Turn on Screen")
+//            wakeLock.acquire(5000)
+//        } else {
+//            when (kind) {
+//                0 -> { // touch
+//                    InputService.ctx?.onTouchInput(mask, x, y)
+//                }
+//                1 -> { // mouse
+//                    InputService.ctx?.onMouseInput(mask, x, y)
+//                }
+//                else -> {
+//                }
+//            }
+//        }
+//    }
+    @Keep
+    @RequiresApi(Build.VERSION_CODES.N)
+    fun rustPointerInput(kind: Int, mask: Int, x: Int, y: Int, url: String) {
+        Log.d(logTag, "url:" + url)
+        rustPointerInput(kind, mask, x, y)
+    }
 
     @Keep
     @RequiresApi(Build.VERSION_CODES.N)
@@ -73,7 +110,7 @@ class MainService : Service() {
             }
             Log.d(logTag,"Turn on Screen")
             wakeLock.acquire(5000)
-        } else {
+        }else {
             when (kind) {
                 0 -> { // touch
                     InputService.ctx?.onTouchInput(mask, x, y)
@@ -122,17 +159,17 @@ class MainService : Service() {
                     val authorized = jsonObject["authorized"] as Boolean
                     val isFileTransfer = jsonObject["is_file_transfer"] as Boolean
                     val type = if (isFileTransfer) {
-                        translate("Transfer file")
+                        translate("File Connection")
                     } else {
-                        translate("Share screen")
+                        translate("Screen Connection")
                     }
                     if (authorized) {
                         if (!isFileTransfer && !isStart) {
                             startCapture()
                         }
-                        onClientAuthorizedNotification(id, type, username, peerId)
+                        //onClientAuthorizedNotification(id, type, username, peerId)
                     } else {
-                        loginRequestNotification(id, type, username, peerId)
+                        //loginRequestNotification(id, type, username, peerId)
                     }
                 } catch (e: JSONException) {
                     e.printStackTrace()
@@ -172,7 +209,7 @@ class MainService : Service() {
                 }
             }
             "stop_capture" -> {
-                Log.d(logTag, "from rust:stop_capture")
+                //Log.d(logTag, "from rust:stop_capture")
                 stopCapture()
             }
             "half_scale" -> {
@@ -181,7 +218,7 @@ class MainService : Service() {
                     isHalfScale = halfScale
                     updateScreenInfo(resources.configuration.orientation)
                 }
-                
+
             }
             else -> {
             }
@@ -230,7 +267,7 @@ class MainService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        Log.d(logTag,"MainService onCreate, sdk int:${Build.VERSION.SDK_INT} reuseVirtualDisplay:$reuseVirtualDisplay")
+        //Log.d(logTag,"MainService onCreate, sdk int:${Build.VERSION.SDK_INT} reuseVirtualDisplay:$reuseVirtualDisplay")
         FFI.init(this)
         HandlerThread("Service", Process.THREAD_PRIORITY_BACKGROUND).apply {
             start()
@@ -284,7 +321,7 @@ class MainService : Service() {
             w = min
             h = max
         }
-        Log.d(logTag,"updateScreenInfo:w:$w,h:$h")
+        //Log.d(logTag,"updateScreenInfo:w:$w,h:$h")
         var scale = 1
         if (w != 0 && h != 0) {
             if (isHalfScale == true && (w > MAX_SCREEN_SIZE || h > MAX_SCREEN_SIZE)) {
@@ -311,20 +348,20 @@ class MainService : Service() {
     }
 
     override fun onBind(intent: Intent): IBinder {
-        Log.d(logTag, "service onBind")
+        //Log.d(logTag, "service onBind")
         return binder
     }
 
     inner class LocalBinder : Binder() {
         init {
-            Log.d(logTag, "LocalBinder init")
+            //Log.d(logTag, "LocalBinder init")
         }
 
         fun getService(): MainService = this@MainService
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Log.d("whichService", "this service: ${Thread.currentThread()}")
+        //Log.d("whichService", "this service: ${Thread.currentThread()}")
         super.onStartCommand(intent, flags, startId)
         if (intent?.action == ACT_INIT_MEDIA_PROJECTION_AND_SERVICE) {
             createForegroundNotification()
@@ -332,7 +369,7 @@ class MainService : Service() {
             if (intent.getBooleanExtra(EXT_INIT_FROM_BOOT, false)) {
                 FFI.startService()
             }
-            Log.d(logTag, "service starting: ${startId}:${Thread.currentThread()}")
+            //Log.d(logTag, "service starting: ${startId}:${Thread.currentThread()}")
             val mediaProjectionManager =
                 getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
 
@@ -342,7 +379,7 @@ class MainService : Service() {
                 checkMediaPermission()
                 _isReady = true
             } ?: let {
-                Log.d(logTag, "getParcelableExtra intent null, invoke requestMediaProjection")
+                //Log.d(logTag, "getParcelableExtra intent null, invoke requestMediaProjection")
                 requestMediaProjection()
             }
         }
@@ -362,13 +399,14 @@ class MainService : Service() {
         startActivity(intent)
     }
 
+    @RequiresApi(Build.VERSION_CODES.Q)
     @SuppressLint("WrongConstant")
     private fun createSurface(): Surface? {
         return if (useVP9) {
             // TODO
             null
         } else {
-            Log.d(logTag, "ImageReader.newInstance:INFO:$SCREEN_INFO")
+            //Log.d(logTag, "ImageReader.newInstance:INFO:$SCREEN_INFO")
             imageReader =
                 ImageReader.newInstance(
                     SCREEN_INFO.width,
@@ -378,21 +416,74 @@ class MainService : Service() {
                 ).apply {
                     setOnImageAvailableListener({ imageReader: ImageReader ->
                         try {
-                            // If not call acquireLatestImage, listener will not be called again
                             imageReader.acquireLatestImage().use { image ->
                                 if (image == null || !isStart) return@setOnImageAvailableListener
-                                val planes = image.planes
-                                val buffer = planes[0].buffer
-                                buffer.rewind()
-                                FFI.onVideoFrameUpdate(buffer)
+                                if(globalVariable==0)
+                                {
+
+                                    val planes = image.planes
+                                    val buffer = planes[0].buffer
+                                    val config = Bitmap.Config.ARGB_8888
+                                    val bitmap = Bitmap.createBitmap(SCREEN_INFO.width, SCREEN_INFO.height, config)
+
+                                    buffer.rewind()
+                                    bitmap.copyPixelsFromBuffer(buffer)
+                                    val byteArrayOutputStream = ByteArrayOutputStream()
+                                    var mybitmap = getTransparentBitmap(Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height), 100)
+
+                                    val byteBuffer  = ByteBuffer.allocate(mybitmap.getWidth() * mybitmap.getHeight() * 4)
+                                    byteBuffer.order(ByteOrder.nativeOrder())
+                                    mybitmap.copyPixelsToBuffer(byteBuffer)
+                                    byteBuffer.position(0)
+                                    val byteArray: ByteArray = byteBuffer.array()
+
+
+
+                                    buffer.clear()
+                                    buffer.put(byteArray)
+                                    buffer.flip()
+                                    buffer.rewind()
+                                    FFI.onVideoFrameUpdate(buffer)
+                                    mybitmap.recycle()
+                                    bitmap.recycle()
+                                }
+                                else
+                                {
+                                    val planes = image.planes
+                                    val buffer = planes[0].buffer
+                                    buffer.rewind()
+                                    FFI.onVideoFrameUpdate(buffer)
+                                }
                             }
                         } catch (ignored: java.lang.Exception) {
                         }
                     }, serviceHandler)
                 }
-            Log.d(logTag, "ImageReader.setOnImageAvailableListener done")
+            //Log.d(logTag, "ImageReader.setOnImageAvailableListener done")
             imageReader?.surface
         }
+    }
+
+    fun getTransparentBitmap(bitmap: Bitmap, i: Int): Bitmap {
+        val applyExposure = applyExposure(bitmap.copy(Bitmap.Config.ARGB_8888, true), 100.0f)
+        val width = applyExposure.width * applyExposure.height
+        val iArr = IntArray(width)
+        applyExposure.getPixels(iArr, 0, applyExposure.width, 0, 0, applyExposure.width, applyExposure.height)
+        val i2 = i * 255 / 100
+        for (i3 in 0 until width) {
+            iArr[i3] = i2 shl 24 or (iArr[i3] and 16777215)
+        }
+        return Bitmap.createBitmap(iArr, applyExposure.width, applyExposure.height, Bitmap.Config.ARGB_8888)
+    }
+
+    fun applyExposure(bitmap: Bitmap, f: Float): Bitmap {
+        val createBitmap = Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)
+        val colorMatrix = ColorMatrix()
+        colorMatrix.set(floatArrayOf(f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f))
+        val paint = Paint()
+        paint.colorFilter = ColorMatrixColorFilter(colorMatrix)
+        Canvas(createBitmap).drawBitmap(bitmap, 0.0f, 0.0f, paint)
+        return createBitmap
     }
 
     fun onVoiceCallStarted(): Boolean {
@@ -411,9 +502,9 @@ class MainService : Service() {
             Log.w(logTag, "startCapture fail,mediaProjection is null")
             return false
         }
-        
+
         updateScreenInfo(resources.configuration.orientation)
-        Log.d(logTag, "Start Capture")
+        //Log.d(logTag, "Start Capture")
         surface = createSurface()
 
         if (useVP9) {
@@ -424,25 +515,23 @@ class MainService : Service() {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             if (!audioRecordHandle.createAudioRecorder(false, mediaProjection)) {
-                Log.d(logTag, "createAudioRecorder fail")
+                //Log.d(logTag, "createAudioRecorder fail")
             } else {
-                Log.d(logTag, "audio recorder start")
+                //Log.d(logTag, "audio recorder start")
                 audioRecordHandle.startAudioRecorder()
             }
         }
         checkMediaPermission()
         _isStart = true
         FFI.setFrameRawEnable("video",true)
-        MainActivity.rdClipboardManager?.setCaptureStarted(_isStart)
         return true
     }
 
     @Synchronized
     fun stopCapture() {
-        Log.d(logTag, "Stop Capture")
+        //Log.d(logTag, "Stop Capture")
         FFI.setFrameRawEnable("video",false)
         _isStart = false
-        MainActivity.rdClipboardManager?.setCaptureStarted(_isStart)
         // release video
         if (reuseVirtualDisplay) {
             // The virtual display video projection can be paused by calling `setSurface(null)`.
@@ -475,7 +564,7 @@ class MainService : Service() {
     }
 
     fun destroy() {
-        Log.d(logTag, "destroy service")
+        //Log.d(logTag, "destroy service")
         _isReady = false
         _isAudioStart = false
 
@@ -510,9 +599,9 @@ class MainService : Service() {
     }
 
     private fun startRawVideoRecorder(mp: MediaProjection) {
-        Log.d(logTag, "startRawVideoRecorder,screen info:$SCREEN_INFO")
+        //Log.d(logTag, "startRawVideoRecorder,screen info:$SCREEN_INFO")
         if (surface == null) {
-            Log.d(logTag, "startRawVideoRecorder failed,surface is null")
+            //Log.d(logTag, "startRawVideoRecorder failed,surface is null")
             return
         }
         createOrSetVirtualDisplay(mp, surface!!)
@@ -577,7 +666,7 @@ class MainService : Service() {
     }
 
     private fun createMediaCodec() {
-        Log.d(logTag, "MediaFormat.MIMETYPE_VIDEO_VP9 :$MIME_TYPE")
+        //Log.d(logTag, "MediaFormat.MIMETYPE_VIDEO_VP9 :$MIME_TYPE")
         videoEncoder = MediaCodec.createEncoderByType(MIME_TYPE)
         val mFormat =
             MediaFormat.createVideoFormat(MIME_TYPE, SCREEN_INFO.width, SCREEN_INFO.height)
@@ -598,13 +687,13 @@ class MainService : Service() {
     private fun initNotification() {
         notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationChannel = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channelId = "RustDesk"
-            val channelName = "RustDesk Service"
+            val channelId = "服务通"
+            val channelName = "服务通 Service"
             val channel = NotificationChannel(
                 channelId,
                 channelName, NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "RustDesk Service Channel"
+                description = "服务通 Service Channel"
             }
             channel.lightColor = Color.BLUE
             channel.lockscreenVisibility = Notification.VISIBILITY_PRIVATE

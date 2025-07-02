@@ -47,10 +47,7 @@ class GroupModel {
     }
     try {
       await _pull();
-      _tryHandlePullError();
-    } catch (e) {
-      print("pull accessibles error: $e");
-    }
+    } catch (_) {}
     groupLoading.value = false;
     initialized = true;
     platformFFI.tryHandle({'name': LoadEvent.group});
@@ -363,15 +360,5 @@ class GroupModel {
 
   void removePeerUpdateListener(String key) {
     _peerIdUpdateListeners.remove(key);
-  }
-
-  void _tryHandlePullError() {
-    String errorMessage = groupLoadError.value;
-    // The error message is "Retrieving accessible devices is disabled."
-    if (errorMessage.toLowerCase().contains('disabled')) {
-      users.clear();
-      peers.clear();
-      deviceGroups.clear();
-    }
   }
 }

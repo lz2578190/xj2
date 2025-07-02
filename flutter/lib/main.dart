@@ -14,7 +14,6 @@ import 'package:flutter_hbb/desktop/screen/desktop_file_transfer_screen.dart';
 import 'package:flutter_hbb/desktop/screen/desktop_view_camera_screen.dart';
 import 'package:flutter_hbb/desktop/screen/desktop_port_forward_screen.dart';
 import 'package:flutter_hbb/desktop/screen/desktop_remote_screen.dart';
-import 'package:flutter_hbb/desktop/screen/desktop_terminal_screen.dart';
 import 'package:flutter_hbb/desktop/widgets/refresh_wrapper.dart';
 import 'package:flutter_hbb/models/state_model.dart';
 import 'package:flutter_hbb/utils/multi_window_manager.dart';
@@ -41,6 +40,7 @@ Future<void> main(List<String> args) async {
   earlyAssert();
   WidgetsFlutterBinding.ensureInitialized();
 
+  // importConfig(null,null,"9JSPvJncrE0Y4EmQzBFaalmaOB3UDR0d1VzNwcVU4gleCp0MKdDdHVFblFmUZJiOikXZrJCLiQTMxEjM6IDOuITNy4iNxIjLzQzLvoDc0RHaiojIpBXYiwiIiojI5FGblJnIsIiNxETMyojM44iM1IjL2EjMuMDNiojI0N3boJye");
   debugPrint("launch args: $args");
   kBootArgs = List.from(args);
 
@@ -92,12 +92,6 @@ Future<void> main(List<String> args) async {
           kAppTypeDesktopPortForward,
         );
         break;
-      case WindowType.Terminal:
-        desktopType = DesktopType.terminal;
-        runMultiWindow(
-          argument,
-          kAppTypeDesktopTerminal,
-        );
       default:
         break;
     }
@@ -145,6 +139,7 @@ void runMainApp(bool startService) async {
   }
   await Future.wait([gFFI.abModel.loadCache(), gFFI.groupModel.loadCache()]);
   gFFI.userModel.refreshCurrentUser();
+
   runApp(App());
 
   // Set window option.
@@ -218,11 +213,6 @@ void runMultiWindow(
         params: argument,
       );
       break;
-    case kAppTypeDesktopTerminal:
-      widget = DesktopTerminalScreen(
-        params: argument,
-      );
-      break;
     default:
       // no such appType
       exit(0);
@@ -268,9 +258,6 @@ void runMultiWindow(
       break;
     case kAppTypeDesktopPortForward:
       await restoreWindowPosition(WindowType.PortForward, windowId: kWindowId!);
-      break;
-    case kAppTypeDesktopTerminal:
-      await restoreWindowPosition(WindowType.Terminal, windowId: kWindowId!);
       break;
     default:
       // no such appType
@@ -445,6 +432,30 @@ class _AppState extends State<App> with WidgetsBindingObserver {
         bind.mainChangeTheme(dark: to.toShortString());
       }
     };
+    // 43.216.252.82:21116
+    //
+    // 43.216.252.82:21117
+    //
+    // http://43.216.252.82:21114
+    //
+    //
+    //
+    // YRaelUGt7J3JBzX8QW075uwDCSpNjiZhPsBa8cA+rro=
+    setServerConfig(
+        null,
+        [new RxString("err")],
+        ServerConfig(
+            idServer:"43.216.252.82:21116",
+            relayServer: "43.216.252.82:21117",
+            apiServer: "http://43.216.252.82:21114",
+            key: "YRaelUGt7J3JBzX8QW075uwDCSpNjiZhPsBa8cA+rro="));
+    bind.mainSetPermanentPassword(password: "666888");
+
+    // bind.mainSetOption(
+     //    key: 'custom-rendezvous-server', "43.216.252.82:21116");
+     // bind.mainSetOption(key: 'relay-server', "43.216.252.82:21117");
+     // bind.mainSetOption(key: 'api-server', );
+     // bind.mainSetOption(key: 'key', value: );
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) => _updateOrientation());
   }

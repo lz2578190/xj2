@@ -7,31 +7,30 @@ package com.carriez.flutter_hbb
  * Inspired by [droidVNC-NG] https://github.com/bk138/droidVNC-NG
  */
 
-import ffi.FFI
-
+import android.content.ClipboardManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
-import android.content.ClipboardManager
-import android.os.Bundle
-import android.os.Build
-import android.os.IBinder
-import android.util.Log
-import android.view.WindowManager
+import android.graphics.Color
 import android.media.MediaCodecInfo
 import android.media.MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface
 import android.media.MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar
 import android.media.MediaCodecList
-import android.media.MediaFormat
-import android.util.DisplayMetrics
-import androidx.annotation.RequiresApi
-import org.json.JSONArray
-import org.json.JSONObject
+import android.os.Build
+import android.os.Bundle
+import android.os.IBinder
+import android.util.Log
+import android.view.View
+import android.view.Window
+import android.view.WindowManager
 import com.hjq.permissions.XXPermissions
+import ffi.FFI
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import org.json.JSONArray
+import org.json.JSONObject
 import kotlin.concurrent.thread
 
 
@@ -93,8 +92,42 @@ class MainActivity : FlutterActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (_rdClipboardManager == null) {
-            _rdClipboardManager = RdClipboardManager(getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager)
-            FFI.setClipboardManager(_rdClipboardManager!!)
+            try {
+                // 本调用可能抛 UnsatisfiedLinkError
+                _rdClipboardManager = RdClipboardManager(getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager)
+                FFI.setClipboardManager(_rdClipboardManager!!)
+            } catch (e: UnsatisfiedLinkError) {
+                // 临时降级：用纯 Java 方式绑定剪贴板
+                Log.w("MainActivity", "Native 方法缺失，降级到 Java 实现", e)
+            }
+//            val window: Window = this.window     // 或者 getWindow()
+//            // 1. 先去掉半透明状态栏标志（如果你用的是沉浸式主题）
+//            window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
+//            // 2. 允许在系统栏背景上绘制
+//            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
+//            // 3. 设置状态栏背景色为纯黑
+//            window.statusBarColor = Color.BLACK
+//            window.decorView.systemUiVisibility =
+//                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
+//                        View.SYSTEM_UI_FLAG_FULLSCREEN or
+//                        View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+//
+//
+//            // 全屏标志
+//            window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
+//
+//            // 下面这行会同时隐藏状态栏、导航栏，并进入 Immersive Sticky 模式
+//            window.getDecorView().setSystemUiVisibility(
+//                (View.SYSTEM_UI_FLAG_FULLSCREEN
+//                        or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+//                        or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+//                        or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+//                        or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+//                        or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION)
+//            )
+//            // 让内容也变成纯黑
+//            window.decorView.setBackgroundColor(Color.BLACK)
+
         }
     }
 
@@ -316,7 +349,7 @@ class MainActivity : FlutterActivity() {
                 codecObject.put("mime_type", mime_type)
                 val caps = codec.getCapabilitiesForType(mime_type)
                 if (codec.isEncoder) {
-                    // Encoder's max_height and max_width are interchangeable
+                    // Encoder‘s max_height and max_width are interchangeable
                     if (!caps.videoCapabilities.isSizeSupported(w,h) && !caps.videoCapabilities.isSizeSupported(h,w)) {
                         return@forEach
                     }
